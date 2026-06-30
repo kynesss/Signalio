@@ -1,4 +1,4 @@
-namespace Signalio.Server.Data;
+namespace Signalio.Server.Models;
 
 public class Message
 {

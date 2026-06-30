@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Signalio.Server.Data;
+namespace Signalio.Server.Models;
 
 public class ApplicationUser : IdentityUser
 {

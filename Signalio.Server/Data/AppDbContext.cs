@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Signalio.Server.Models;
 
 namespace Signalio.Server.Data;
 

@@ -154,7 +154,7 @@ namespace Signalio.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Signalio.Server.Data.ApplicationUser", b =>
+            modelBuilder.Entity("Signalio.Server.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -218,7 +218,7 @@ namespace Signalio.Server.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Signalio.Server.Data.Message", b =>
+            modelBuilder.Entity("Signalio.Server.Models.Message", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -255,7 +255,7 @@ namespace Signalio.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Signalio.Server.Data.ApplicationUser", null)
+                    b.HasOne("Signalio.Server.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -264,7 +264,7 @@ namespace Signalio.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Signalio.Server.Data.ApplicationUser", null)
+                    b.HasOne("Signalio.Server.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -279,7 +279,7 @@ namespace Signalio.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Signalio.Server.Data.ApplicationUser", null)
+                    b.HasOne("Signalio.Server.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -288,16 +288,16 @@ namespace Signalio.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Signalio.Server.Data.ApplicationUser", null)
+                    b.HasOne("Signalio.Server.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Signalio.Server.Data.Message", b =>
+            modelBuilder.Entity("Signalio.Server.Models.Message", b =>
                 {
-                    b.HasOne("Signalio.Server.Data.ApplicationUser", "User")
+                    b.HasOne("Signalio.Server.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
