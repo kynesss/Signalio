@@ -1,0 +1,76 @@
+@page "/login"
+@using System.Net
+@inject HttpClient Http
+@inject TokenAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Logowanie</PageTitle>
+
+<h1>Logowanie</h1>
+
+<div class="row">
+    <div class="col-md-6 col-lg-4">
+        <EditForm Model="_model" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label" for="username">Nazwa użytkownika</label>
+                <InputText id="username" class="form-control" @bind-Value="_model.Username" />
+                <ValidationMessage For="() => _model.Username" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="password">Hasło</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
+                <ValidationMessage For="() => _model.Password" />
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="alert alert-danger">@_error</div>
+            }
+
+            <button type="submit" class="btn btn-primary" disabled="@_busy">
+                @(_busy ? "Logowanie..." : "Zaloguj")
+            </button>
+        </EditForm>
+
+        <p class="mt-3">Nie masz konta? <a href="register">Zarejestruj się</a></p>
+    </div>
+</div>
+
+@code {
+    private readonly LoginRequest _model = new();
+    private string? _error;
+    private bool _busy;
+
+    private async Task HandleLogin()
+    {
+        _busy = true;
+        _error = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/login", _model);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+                await AuthStateProvider.NotifyUserAuthentication(auth!.Token);
+                Navigation.NavigateTo("/");
+            }
+            else if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                _error = "Nieprawidłowy login lub hasło";
+            }
+            else
+            {
+                _error = "Wystąpił błąd. Spróbuj ponownie.";
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

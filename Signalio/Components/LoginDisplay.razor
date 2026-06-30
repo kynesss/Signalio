@@ -1,0 +1,21 @@
+@inject TokenAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        <span class="me-3">Zalogowano jako <strong>@context.User.Identity?.Name</strong></span>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="Logout">Wyloguj</button>
+    </Authorized>
+    <NotAuthorized>
+        <a href="login">Logowanie</a>
+        <a href="register" class="ms-3">Rejestracja</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task Logout()
+    {
+        await AuthStateProvider.NotifyUserLogout();
+        Navigation.NavigateTo("login");
+    }
+}

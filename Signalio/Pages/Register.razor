@@ -1,0 +1,116 @@
+@page "/register"
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+@inject TokenAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Rejestracja</PageTitle>
+
+<h1>Rejestracja</h1>
+
+<div class="row">
+    <div class="col-md-6 col-lg-4">
+        <EditForm Model="_model" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label" for="username">Nazwa użytkownika</label>
+                <InputText id="username" class="form-control" @bind-Value="_model.Username" />
+                <ValidationMessage For="() => _model.Username" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="password">Hasło</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
+                <ValidationMessage For="() => _model.Password" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="confirm">Powtórz hasło</label>
+                <InputText id="confirm" type="password" class="form-control" @bind-Value="_model.ConfirmPassword" />
+                <ValidationMessage For="() => _model.ConfirmPassword" />
+            </div>
+
+            @if (_serverErrors.Count > 0)
+            {
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach (var error in _serverErrors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary" disabled="@_busy">
+                @(_busy ? "Rejestrowanie..." : "Zarejestruj")
+            </button>
+        </EditForm>
+
+        <p class="mt-3">Masz już konto? <a href="login">Zaloguj się</a></p>
+    </div>
+</div>
+
+@code {
+    private readonly RegisterModel _model = new();
+    private readonly List<string> _serverErrors = [];
+    private bool _busy;
+
+    private async Task HandleRegister()
+    {
+        _busy = true;
+        _serverErrors.Clear();
+
+        try
+        {
+            var request = new RegisterRequest
+            {
+                Username = _model.Username,
+                Password = _model.Password
+            };
+            var response = await Http.PostAsJsonAsync("api/auth/register", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+                await AuthStateProvider.NotifyUserAuthentication(auth!.Token);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                var problem = await response.Content.ReadFromJsonAsync<ValidationProblem>();
+                if (problem?.Errors is { Count: > 0 })
+                    _serverErrors.AddRange(problem.Errors.SelectMany(e => e.Value));
+                else
+                    _serverErrors.Add("Rejestracja nie powiodła się. Spróbuj ponownie.");
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Client-side model adds confirm-password validation on top of RegisterRequest.
+    private class RegisterModel
+    {
+        [Required]
+        [StringLength(50, MinimumLength = 3)]
+        public string Username { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [Compare(nameof(Password), ErrorMessage = "Hasła nie są identyczne.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    // Matches the shape of ASP.NET Core's validation problem response.
+    private class ValidationProblem
+    {
+        public Dictionary<string, string[]> Errors { get; set; } = new();
+    }
+}
