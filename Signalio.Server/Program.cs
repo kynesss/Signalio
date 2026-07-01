@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Signalio.Server.Configuration;
 using Signalio.Server.Data;
 using Signalio.Server.Endpoints;
+using Signalio.Server.Hubs;
 using Signalio.Server.Models;
 using Signalio.Server.Services;
 
@@ -66,6 +67,9 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<OnlineUserService>();
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
@@ -84,6 +88,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapAuthEndpoints();
+app.MapMessageEndpoints();
+app.MapHub<ChatHub>("/chathub");
 
 app.MapRazorPages();
 app.MapControllers();
