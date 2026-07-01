@@ -1,0 +1,107 @@
+@page "/chat"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient Http
+@inject TokenStore TokenStore
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Czat</PageTitle>
+
+<h1>Czat</h1>
+
+<div style="display: flex; gap: 2rem;">
+    <div style="flex: 1;">
+        <div style="border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 0.5rem;">
+            @foreach (var msg in _messages)
+            {
+                <div>
+                    <span style="color: #888;">[@msg.SentAt.ToLocalTime().ToString("HH:mm")]</span>
+                    <strong>@msg.Username:</strong> @msg.Content
+                </div>
+            }
+        </div>
+
+        <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+            <input @bind="_messageInput" @bind:event="oninput" @onkeypress="HandleKeyPress"
+                   placeholder="Napisz wiadomość..." style="flex: 1;" />
+            <button @onclick="SendMessage">Wyślij</button>
+        </div>
+    </div>
+
+    <div style="width: 200px;">
+        <h3>Online (@_onlineUsers.Count)</h3>
+        <ul>
+            @foreach (var user in _onlineUsers)
+            {
+                <li>@user</li>
+            }
+        </ul>
+    </div>
+</div>
+
+@code {
+    private readonly List<MessageDto> _messages = [];
+    private List<string> _onlineUsers = [];
+    private string _messageInput = string.Empty;
+    private HubConnection? _connection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load history first so the chat isn't empty on join.
+        var history = await Http.GetFromJsonAsync<List<MessageDto>>("api/messages");
+        if (history is not null)
+            _messages.AddRange(history);
+
+        var token = await TokenStore.GetTokenAsync();
+
+        _connection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"), options =>
+            {
+                options.AccessTokenProvider = () => Task.FromResult(token);
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        _connection.On<MessageDto>("ReceiveMessage", msg =>
+        {
+            _messages.Add(msg);
+            InvokeAsync(StateHasChanged);
+        });
+
+        _connection.On<string, List<string>>("UserConnected", (_, users) =>
+        {
+            _onlineUsers = users;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _connection.On<string, List<string>>("UserDisconnected", (_, users) =>
+        {
+            _onlineUsers = users;
+            InvokeAsync(StateHasChanged);
+        });
+
+        await _connection.StartAsync();
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_messageInput) || _connection is null)
+            return;
+
+        await _connection.SendAsync("SendMessage", _messageInput);
+        _messageInput = string.Empty;
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await SendMessage();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connection is not null)
+            await _connection.DisposeAsync();
+    }
+}
